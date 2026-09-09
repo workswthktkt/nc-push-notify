@@ -112,20 +112,20 @@
 <script>
   // ▼▼▼ 設定 ▼▼▼
   // OneSignalの管理画面（Settings > Keys & IDs）で発行されたApp IDに書き換えてください。
-  var ONESIGNAL_APP_ID = "4ddf36c1-9500-4529-ab0e-9ade4fe1835e";
+  var ONESIGNAL_APP_ID = "ここにOneSignalのApp IDを貼り付ける";
   // マスターgsのウェブアプリURL（デプロイ済みのexec URL。LINEのWebhook URLと同じもの）に書き換えてください。
-  var MASTER_WEBAPP_URL = "https://script.google.com/macros/s/AKfycbwfPENTqkTLOK5qHURJo875gt6JNudxjuckZ6hKPOJ2tqO8p9XiFxPmrXxlLJyCwhSmLg/exec";
+  var MASTER_WEBAPP_URL = "ここにマスターgsのウェブアプリURL（.../exec）を貼り付ける";
   // ▲▲▲ 設定ここまで ▲▲▲
  
   window.OneSignalDeferred = window.OneSignalDeferred || [];
-OneSignalDeferred.push(function (OneSignal) {
-  var swDir = location.pathname.replace(/[^/]*$/, "");
-  OneSignal.init({
-    appId: ONESIGNAL_APP_ID,
-    serviceWorkerPath: swDir.replace(/^\//, "") + "OneSignalSDKWorker.js",
-    serviceWorkerParam: { scope: swDir }
+  OneSignalDeferred.push(function (OneSignal) {
+    // GitHub Pagesの「プロジェクトサイト」（https://ユーザー名.github.io/リポジトリ名/ の形）は
+    // ドメイン直下ではなくサブフォルダに置かれる。今回のOneSignalアプリは「Typical Site」で
+    // 作成しているため、Service Workerの置き場所（サブフォルダ）はコード側ではなく、
+    // OneSignalの管理画面（Settings > Push & In-App > Web > Advanced Push Settings内の
+    // 「Customize service worker paths and filenames」）側で設定する（セットアップ手順書 参照）。
+    OneSignal.init({ appId: ONESIGNAL_APP_ID });
   });
-});
  
   var statusEl = document.getElementById("statusText");
   var btn = document.getElementById("registerBtn");
