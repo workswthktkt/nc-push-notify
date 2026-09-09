@@ -67,8 +67,8 @@
        var storeName = document.getElementById("storeSelect").value;
        var name = document.getElementById("nameInput").value.trim();
        if (!storeName || !name) { setStatus("店舗と氏名を入力してください。"); return; }
-       if (ONESIGNAL_APP_ID.indexOf("ここに") === 0) { setStatus("設定エラー: このページのONESIGNAL_APP_IDがまだ設定されていません（管理者にご連絡ください）。"); return; }
-       if (MASTER_WEBAPP_URL.indexOf("ここに") === 0) { setStatus("設定エラー: このページのMASTER_WEBAPP_URLがまだ設定されていません（管理者にご連絡ください）。"); return; }
+       if (ONESIGNAL_APP_ID.indexOf("4ddf36c1-9500-4529-ab0e-9ade4fe1835e") === 0) { setStatus("設定エラー: このページのONESIGNAL_APP_IDがまだ設定されていません（管理者にご連絡ください）。"); return; }
+       if (MASTER_WEBAPP_URL.indexOf("https://script.google.com/macros/s/AKfycbwfPENTqkTLOK5qHURJo875gt6JNudxjuckZ6hKPOJ2tqO8p9XiFxPmrXxlLJyCwhSmLg/exec") === 0) { setStatus("設定エラー: このページのMASTER_WEBAPP_URLがまだ設定されていません（管理者にご連絡ください）。"); return; }
        btn.disabled = true;
        setStatus("通知の許可をリクエストしています...");
        OneSignalDeferred.push(function (OneSignal) {
