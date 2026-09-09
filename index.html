@@ -118,9 +118,14 @@
   // ▲▲▲ 設定ここまで ▲▲▲
  
   window.OneSignalDeferred = window.OneSignalDeferred || [];
-  OneSignalDeferred.push(function (OneSignal) {
-    OneSignal.init({ appId: ONESIGNAL_APP_ID });
+OneSignalDeferred.push(function (OneSignal) {
+  var swDir = location.pathname.replace(/[^/]*$/, "");
+  OneSignal.init({
+    appId: ONESIGNAL_APP_ID,
+    serviceWorkerPath: swDir.replace(/^\//, "") + "OneSignalSDKWorker.js",
+    serviceWorkerParam: { scope: swDir }
   });
+});
  
   var statusEl = document.getElementById("statusText");
   var btn = document.getElementById("registerBtn");
