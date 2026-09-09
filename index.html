@@ -1,96 +1,206 @@
-   <!DOCTYPE html>
-   <html lang="ja">
-   <head>
-   <meta charset="UTF-8">
-   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-   <title>通知登録 - 衛生管理アラート</title>
-   <link rel="manifest" href="manifest.json">
-   <meta name="apple-mobile-web-app-capable" content="yes">
-   <meta name="apple-mobile-web-app-title" content="衛生管理通知">
-   <style>
-     body { font-family: -apple-system, BlinkMacSystemFont, "Hiragino Kaku Gothic ProN", "Yu Gothic", sans-serif; background: #f4f5f7; margin: 0; padding: 20px; color: #222; }
-     .card { max-width: 420px; margin: 0 auto; background: #fff; border-radius: 10px; padding: 24px 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
-     h1 { font-size: 1.15rem; margin: 0 0 8px; text-align: center; }
-     p.desc { font-size: 0.85rem; color: #555; line-height: 1.6; }
-     label { display: block; font-size: 0.85rem; font-weight: bold; margin: 16px 0 6px; color: #444; }
-     select, input[type="text"] { width: 100%; box-sizing: border-box; padding: 10px; font-size: 16px; border: 1px solid #ccc; border-radius: 6px; }
-     button { width: 100%; margin-top: 20px; padding: 12px; font-size: 1rem; font-weight: bold; color: #fff; background: #2e7d32; border: none; border-radius: 8px; cursor: pointer; }
-     button:disabled { background: #a5a5a5; }
-     #statusText { margin-top: 14px; font-size: 0.85rem; text-align: center; white-space: pre-wrap; }
-     .ios-note { margin-top: 18px; padding: 10px 12px; background: #fff8e1; border: 1px solid #ffe082; border-radius: 8px; font-size: 0.78rem; color: #6d5300; line-height: 1.6; }
-   </style>
-   </head>
-   <body>
-   <div class="card">
-     <h1>衛生管理チェックの通知登録</h1>
-     <p class="desc">このページを一度開いて登録すると、身だしなみチェック未確認のお知らせが、この端末に直接バナー通知で届くようになります（LINEは使いません）。</p>
-     <label for="storeSelect">店舗</label>
-     <select id="storeSelect">
-       <option value="">選択してください</option>
-       <option value="西新井西口店">西新井西口店</option>
-       <option value="水戸北口駅前店">水戸北口駅前店</option>
-     </select>
-     <label for="nameInput">氏名</label>
-     <input type="text" id="nameInput" placeholder="例: 山田花子">
-     <p class="desc" style="margin-top:4px;">※ 従業員名簿に登録されている氏名と、できるだけ同じように入力してください（スペースの有無などにご注意ください）。</p>
-     <button id="registerBtn">通知を有効にする</button>
-     <div id="statusText"></div>
-     <div class="ios-note">
-       <strong>iPhoneをお使いの方へ：</strong><br>
-       Safariでこのページを開いた状態で、共有ボタン（□に↑のアイコン）から「ホーム画面に追加」を行い、追加されたアイコンからこのページを開き直してから「通知を有効にする」を押してください。ブラウザのタブのまま操作すると、通知が届きません。
-     </div>
-   </div>
-   <!-- OneSignal Web SDK -->
-   <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
-   <script>
-     var ONESIGNAL_APP_ID = "4ddf36c1-9500-4529-ab0e-9ade4fe1835e";
-     var MASTER_WEBAPP_URL = "https://script.google.com/macros/s/AKfycbwfPENTqkTLOK5qHURJo875gt6JNudxjuckZ6hKPOJ2tqO8p9XiFxPmrXxlLJyCwhSmLg/exec";
-     window.OneSignalDeferred = window.OneSignalDeferred || [];
-     OneSignalDeferred.push(function (OneSignal) { OneSignal.init({ appId: ONESIGNAL_APP_ID }); });
-     var statusEl = document.getElementById("statusText");
-     var btn = document.getElementById("registerBtn");
-     function setStatus(text) { statusEl.innerText = text; }
-     function waitForSubscriptionId(maxTries) {
-       return new Promise(function (resolve, reject) {
-         var tries = 0;
-         var timer = setInterval(function () {
-           tries++;
-           OneSignalDeferred.push(function (OneSignal) {
-             var id = OneSignal.User && OneSignal.User.PushSubscription ? OneSignal.User.PushSubscription.id : null;
-             if (id) { clearInterval(timer); resolve(id); }
-             else if (tries >= maxTries) { clearInterval(timer); reject(new Error("購読IDの取得がタイムアウトしました。")); }
-           });
-         }, 1000);
-       });
-     }
-     btn.addEventListener("click", function () {
-       var storeName = document.getElementById("storeSelect").value;
-       var name = document.getElementById("nameInput").value.trim();
-       if (!storeName || !name) { setStatus("店舗と氏名を入力してください。"); return; }
-       if (ONESIGNAL_APP_ID.indexOf("ここに") === 0) { setStatus("設定エラー: このページのONESIGNAL_APP_IDがまだ設定されていません（管理者にご連絡ください）。"); return; }
-       if (MASTER_WEBAPP_URL.indexOf("ここに") === 0) { setStatus("設定エラー: このページのMASTER_WEBAPP_URLがまだ設定されていません（管理者にご連絡ください）。"); return; }
-       btn.disabled = true;
-       setStatus("通知の許可をリクエストしています...");
-       OneSignalDeferred.push(function (OneSignal) {
-         OneSignal.Notifications.requestPermission()
-           .then(function () { setStatus("購読情報を取得しています..."); return waitForSubscriptionId(15); })
-           .then(function (subscriptionId) {
-             setStatus("登録しています...");
-             return fetch(MASTER_WEBAPP_URL, {
-               method: "POST",
-               mode: "no-cors",
-               headers: { "Content-Type": "text/plain;charset=utf-8" },
-               body: JSON.stringify({ type: "pushRegister", name: name, storeName: storeName, subscriptionId: subscriptionId })
-             });
-           })
-           .then(function () { setStatus("登録を送信しました。このページはもう閉じて大丈夫です。\n（うまく届いていない場合は、しばらくしてからもう一度登録してみてください）"); })
-           .catch(function (err) {
-             console.error(err);
-             setStatus("エラーが発生しました: " + err.message + "\nうまくいかない場合は、通知の許可を求めるポップアップがブロックされていないか確認してください。");
-             btn.disabled = false;
-           });
-       });
-     });
-   </script>
-   </body>
-   </html>
+
+
+Push notify site index · HTML
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>通知登録 - 衛生管理アラート</title>
+<link rel="manifest" href="manifest.json">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="衛生管理通知">
+<style>
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Hiragino Kaku Gothic ProN", "Yu Gothic", sans-serif;
+    background: #f4f5f7;
+    margin: 0;
+    padding: 20px;
+    color: #222;
+  }
+  .card {
+    max-width: 420px;
+    margin: 0 auto;
+    background: #fff;
+    border-radius: 10px;
+    padding: 24px 20px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  }
+  h1 {
+    font-size: 1.15rem;
+    margin: 0 0 8px;
+    text-align: center;
+  }
+  p.desc {
+    font-size: 0.85rem;
+    color: #555;
+    line-height: 1.6;
+  }
+  label {
+    display: block;
+    font-size: 0.85rem;
+    font-weight: bold;
+    margin: 16px 0 6px;
+    color: #444;
+  }
+  select, input[type="text"] {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 10px;
+    font-size: 16px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+  }
+  button {
+    width: 100%;
+    margin-top: 20px;
+    padding: 12px;
+    font-size: 1rem;
+    font-weight: bold;
+    color: #fff;
+    background: #2e7d32;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+  }
+  button:disabled { background: #a5a5a5; }
+  #statusText {
+    margin-top: 14px;
+    font-size: 0.85rem;
+    text-align: center;
+    white-space: pre-wrap;
+  }
+  .ios-note {
+    margin-top: 18px;
+    padding: 10px 12px;
+    background: #fff8e1;
+    border: 1px solid #ffe082;
+    border-radius: 8px;
+    font-size: 0.78rem;
+    color: #6d5300;
+    line-height: 1.6;
+  }
+</style>
+</head>
+<body>
+<div class="card">
+  <h1>衛生管理チェックの通知登録</h1>
+  <p class="desc">
+    このページを一度開いて登録すると、身だしなみチェック未確認のお知らせが、この端末に直接バナー通知で届くようになります（LINEは使いません）。
+  </p>
+ 
+  <label for="storeSelect">店舗</label>
+  <select id="storeSelect">
+    <option value="">選択してください</option>
+    <option value="西新井西口店">西新井西口店</option>
+    <option value="水戸北口駅前店">水戸北口駅前店</option>
+  </select>
+ 
+  <label for="nameInput">氏名</label>
+  <input type="text" id="nameInput" placeholder="例: 山田花子">
+  <p class="desc" style="margin-top:4px;">※ 従業員名簿に登録されている氏名と、できるだけ同じように入力してください（スペースの有無などにご注意ください）。</p>
+ 
+  <button id="registerBtn">通知を有効にする</button>
+  <div id="statusText"></div>
+ 
+  <div class="ios-note">
+    <strong>iPhoneをお使いの方へ：</strong><br>
+    Safariでこのページを開いた状態で、共有ボタン（□に↑のアイコン）から「ホーム画面に追加」を行い、追加されたアイコンからこのページを開き直してから「通知を有効にする」を押してください。ブラウザのタブのまま操作すると、通知が届きません。
+  </div>
+</div>
+ 
+<!-- OneSignal Web SDK -->
+<script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
+<script>
+  // ▼▼▼ 設定 ▼▼▼
+  // OneSignalの管理画面（Settings > Keys & IDs）で発行されたApp IDに書き換えてください。
+  var ONESIGNAL_APP_ID = "4ddf36c1-9500-4529-ab0e-9ade4fe1835e";
+  // マスターgsのウェブアプリURL（デプロイ済みのexec URL。LINEのWebhook URLと同じもの）に書き換えてください。
+  var MASTER_WEBAPP_URL = "https://script.google.com/macros/s/AKfycbwfPENTqkTLOK5qHURJo875gt6JNudxjuckZ6hKPOJ2tqO8p9XiFxPmrXxlLJyCwhSmLg/exec";
+  // ▲▲▲ 設定ここまで ▲▲▲
+ 
+  window.OneSignalDeferred = window.OneSignalDeferred || [];
+  OneSignalDeferred.push(function (OneSignal) {
+    OneSignal.init({ appId: ONESIGNAL_APP_ID });
+  });
+ 
+  var statusEl = document.getElementById("statusText");
+  var btn = document.getElementById("registerBtn");
+ 
+  function setStatus(text) { statusEl.innerText = text; }
+ 
+  // OneSignalの購読IDが払い出されるまで、少し待ってから何度か読みに行く
+  // （許可直後は数百ms〜数秒のラグがあることがあるため）。
+  function waitForSubscriptionId(maxTries) {
+    return new Promise(function (resolve, reject) {
+      var tries = 0;
+      var timer = setInterval(function () {
+        tries++;
+        OneSignalDeferred.push(function (OneSignal) {
+          var id = OneSignal.User && OneSignal.User.PushSubscription ? OneSignal.User.PushSubscription.id : null;
+          if (id) {
+            clearInterval(timer);
+            resolve(id);
+          } else if (tries >= maxTries) {
+            clearInterval(timer);
+            reject(new Error("購読IDの取得がタイムアウトしました。"));
+          }
+        });
+      }, 1000);
+    });
+  }
+ 
+  btn.addEventListener("click", function () {
+    var storeName = document.getElementById("storeSelect").value;
+    var name = document.getElementById("nameInput").value.trim();
+ 
+    if (!storeName || !name) {
+      setStatus("店舗と氏名を入力してください。");
+      return;
+    }
+    if (ONESIGNAL_APP_ID.indexOf("ここに") === 0) {
+      setStatus("設定エラー: このページのONESIGNAL_APP_IDがまだ設定されていません（管理者にご連絡ください）。");
+      return;
+    }
+    if (MASTER_WEBAPP_URL.indexOf("ここに") === 0) {
+      setStatus("設定エラー: このページのMASTER_WEBAPP_URLがまだ設定されていません（管理者にご連絡ください）。");
+      return;
+    }
+ 
+    btn.disabled = true;
+    setStatus("通知の許可をリクエストしています...");
+ 
+    OneSignalDeferred.push(function (OneSignal) {
+      OneSignal.Notifications.requestPermission()
+        .then(function () {
+          setStatus("購読情報を取得しています...");
+          return waitForSubscriptionId(15);
+        })
+        .then(function (subscriptionId) {
+          setStatus("登録しています...");
+          // Apps ScriptのWebアプリにブラウザからfetch()でPOSTすると、Apps Script側の
+          // リダイレクトによって送信内容（本文）が失われてしまうことがあるため、GETの
+          // クエリパラメータとして送る方式にしている（doGet側で type=pushRegister を判定）。
+          // mode: "no-cors" にしているのは、応答（CORSヘッダーが無い）の読み取りエラーを
+          // 避けるためで、応答の中身は読まない前提で送信だけ行う。
+          var url = MASTER_WEBAPP_URL
+            + "?type=pushRegister"
+            + "&name=" + encodeURIComponent(name)
+            + "&storeName=" + encodeURIComponent(storeName)
+            + "&subscriptionId=" + encodeURIComponent(subscriptionId);
+          return fetch(url, { method: "GET", mode: "no-cors" });
+        })
+        .then(function () {
+          setStatus("登録を送信しました。このページはもう閉じて大丈夫です。\n（うまく届いていない場合は、しばらくしてからもう一度登録してみてください）");
+        })
+        .catch(function (err) {
+          console.error(err);
+          setStatus("エラーが発生しました: " + err.message + "\nうまくいかない場合は、通知の許可を求めるポップアップがブロックされていないか確認してください。");
+          btn.disabled = false;
+        });
+    });
+  });
+</script>
+</body>
+</html>
+ 
