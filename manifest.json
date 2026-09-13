@@ -1,9 +1,10 @@
-   {
-     "name": "衛生管理通知",
-     "short_name": "衛生管理通知",
-     "start_url": "./index.html",
-     "display": "standalone",
-     "background_color": "#f4f5f7",
-     "theme_color": "#2e7d32",
-     "icons": []
-   }
+h notify site manifest · JSON
+{
+  "name": "NCスタッフアプリ通知",
+  "short_name": "NCスタッフ通知",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#f4f5f7",
+  "theme_color": "#2e7d32",
+  "icons": []
+}
